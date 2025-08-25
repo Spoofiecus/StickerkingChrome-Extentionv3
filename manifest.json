@@ -1,0 +1,35 @@
+{
+  "manifest_version": 3,
+  "name": "Sticker King Pricing Calculator",
+  "version": "1.2",
+  "description": "Calculate sticker pricing with a user-friendly sidebar, styled for Sticker King. Supports multiple stickers, VAT, and detailed quotes.",
+  "permissions": ["sidePanel", "storage"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_title": "Open Sticker King Pricing Calculator",
+    "default_icons": {
+      "16": "icon16.png",
+      "48": "icon48.png",
+      "128": "icon128.png"
+    }
+  },
+  "commands": {
+    "_execute_action": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+S",
+        "mac": "Command+Shift+S"
+      },
+      "description": "Open the Sticker King Pricing Calculator sidebar"
+    }
+  },
+  "side_panel": {
+    "default_path": "sidebar.html"
+  },
+  "icons": {
+    "16": "icon16.png",
+    "48": "icon48.png",
+    "128": "icon128.png"
+  }
+}
