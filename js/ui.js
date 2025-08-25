@@ -12,6 +12,7 @@ export function getDOMElements() {
     roundedCornersCheckbox: document.getElementById('rounded-corners'),
     toast: document.getElementById('toast'),
     copyQuoteBtn: null, // Will be created dynamically
+    savePdfBtn: null, // Will be created dynamically
   };
 }
 
@@ -95,13 +96,26 @@ export function renderResults(resultsDiv, quoteData) {
     return;
   }
 
+  const buttonContainer = document.createElement('div');
+  buttonContainer.className = 'button-container';
+
   const copyButton = document.createElement('button');
   copyButton.id = 'copy-quote';
   copyButton.className = 'copy-quote-button';
   const copyIcon = document.createElement('i');
   copyIcon.className = 'fas fa-copy';
   copyButton.appendChild(copyIcon);
-  resultsDiv.appendChild(copyButton);
+  buttonContainer.appendChild(copyButton);
+
+  const savePdfButton = document.createElement('button');
+  savePdfButton.id = 'save-pdf';
+  savePdfButton.className = 'save-pdf-button';
+  const pdfIcon = document.createElement('i');
+  pdfIcon.className = 'fas fa-file-pdf';
+  savePdfButton.appendChild(pdfIcon);
+  buttonContainer.appendChild(savePdfButton);
+
+  resultsDiv.appendChild(buttonContainer);
 
   let fullQuote = `Dear Customer. Thank you for reaching out to us.\nBelow is your Quote based on your request:\n\nMaterial: ${quoteData.material}\n\n`;
 
