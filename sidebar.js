@@ -130,41 +130,139 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   // --- PDF Generation ---
-  function generatePdf(quoteData) {
+  async function getImageBase64(url) {
+    const response = await fetch(url);
+    const blob = await response.blob();
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  }
+
+  async function generatePdf(quoteData) {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
+    const pageHeight = doc.internal.pageSize.height;
 
-    doc.text("Sticker King Quote", 10, 10);
-    doc.text(`Material: ${quoteData.material}`, 10, 20);
+    // --- Helper function to add footer ---
+    const addFooter = () => {
+      doc.setFontSize(8);
+      doc.setTextColor(150);
+      doc.text("Thank you for your business!", 105, pageHeight - 15, { align: 'center' });
+      doc.text("Sticker King | www.stickerking.co.za | sales@stickerking.co.za", 105, pageHeight - 10, { align: 'center' });
+    };
 
-    let y = 30;
-    quoteData.stickerQuotes.forEach(stickerQuote => {
-      const lines = doc.splitTextToSize(stickerQuote.text, 180);
-      doc.text(lines, 10, y);
-      y += lines.length * 10;
+    // --- Load Logo ---
+    const logoUrl = chrome.runtime.getURL('Logo.png');
+    const logoBase64 = await getImageBase64(logoUrl);
+    doc.addImage(logoBase64, 'PNG', 14, 12, 50, 15);
+
+    // --- Header ---
+    doc.setFontSize(18);
+    doc.setFont('helvetica', 'bold');
+    doc.text("QUOTE", 196, 20, { align: 'right' });
+
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text("Sticker King Pty (Ltd)", 196, 28, { align: 'right' });
+    doc.text("123 Vinyl Lane, Print City", 196, 32, { align: 'right' });
+    doc.text("sales@stickerking.co.za", 196, 36, { align: 'right' });
+
+    // --- Quote Details ---
+    let y = 55;
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.text("Quote Details", 14, y);
+    y += 8;
+
+    doc.setDrawColor(200);
+    doc.line(14, y, 196, y); // horizontal line
+    y += 10;
+
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Material: ${quoteData.material}`, 14, y);
+    y += 6;
+    if (quoteData.roundedCorners) {
+        doc.text("Options: Cutline with rounded Corners", 14, y);
+        y += 6;
+    }
+    y += 10;
+
+    // --- Line Items Table Header ---
+    doc.setFont('helvetica', 'bold');
+    doc.text("Description", 14, y);
+    doc.text("Unit Price", 120, y, { align: 'right' });
+    doc.text("Quantity", 155, y, { align: 'right' });
+    doc.text("Total", 196, y, { align: 'right' });
+    y += 4;
+    doc.line(14, y, 196, y); // horizontal line
+    y += 8;
+
+    // --- Line Items ---
+    doc.setFont('helvetica', 'normal');
+    quoteData.stickerQuotes.forEach(sticker => {
+      if (y > pageHeight - 40) {
+        addFooter();
+        doc.addPage();
+        y = 20;
+      }
+      const description = `${sticker.html.split('<br>')[0]}`;
+      const lines = doc.splitTextToSize(description, 90);
+      doc.text(lines, 14, y);
+
+      const price = parseFloat(sticker.html.match(/R([\d.]+)/)[1]);
+      const quantity = parseInt(sticker.html.match(/(\d+) stickers<br>/)[1]);
+      const total = price * quantity;
+
+      doc.text(`R${price.toFixed(2)}`, 120, y, { align: 'right' });
+      doc.text(`${quantity}`, 155, y, { align: 'right' });
+      doc.text(`R${total.toFixed(2)}`, 196, y, { align: 'right' });
+      y += (lines.length * 5) + 8;
     });
 
-    if (quoteData.totalCostExclVat > 0) {
-      doc.text(`Total: R${quoteData.totalCostExclVat.toFixed(2)} Exclusive of VAT`, 10, y);
-      y += 10;
+    // --- Totals ---
+    if (y > pageHeight - 50) {
+        addFooter();
+        doc.addPage();
+        y = 30;
+    }
+    y += 5;
+    doc.line(120, y, 196, y);
+    y += 8;
 
-      if (quoteData.includeVat) {
-        doc.text(`Total Incl VAT: R${quoteData.totalCostInclVat.toFixed(2)} the complete order total`, 10, y);
-        y += 10;
-      }
+    doc.setFont('helvetica', 'bold');
+    doc.text("Subtotal", 155, y, { align: 'right' });
+    doc.text(`R${quoteData.totalCostExclVat.toFixed(2)}`, 196, y, { align: 'right' });
+    y += 7;
 
-      if (quoteData.totalCostExclVat < quoteData.minOrderAmount) {
-        doc.text('YOUR ORDER IS UNDER R100.00 EXCL VAT. WE HAVE A MINIMUM ORDER AMOUNT OF R100.00 EXCL VAT', 10, y);
-        y += 10;
-      }
+    if (quoteData.includeVat) {
+        doc.setFont('helvetica', 'normal');
+        doc.text(`VAT (${DEFAULT_VAT_RATE}%)`, 155, y, { align: 'right' });
+        const vatAmount = quoteData.totalCostInclVat - quoteData.totalCostExclVat;
+        doc.text(`R${vatAmount.toFixed(2)}`, 196, y, { align: 'right' });
+        y += 7;
 
-      if (quoteData.roundedCorners) {
-        doc.text("Cutline with rounded Corners", 10, y);
-        y += 10;
-      }
+        doc.setFont('helvetica', 'bold');
+        doc.text("Total", 155, y, { align: 'right' });
+        doc.text(`R${quoteData.totalCostInclVat.toFixed(2)}`, 196, y, { align: 'right' });
+        y+=7;
     }
 
-    doc.save("quote.pdf");
+
+    // --- Minimum Order Note ---
+    if (quoteData.totalCostExclVat < quoteData.minOrderAmount) {
+      doc.setFontSize(9);
+      doc.setTextColor(220, 53, 69); // Bootstrap's danger color
+      doc.text(`Minimum order amount of R${quoteData.minOrderAmount.toFixed(2)} excl. VAT applies.`, 14, y + 10);
+    }
+
+    // --- Footer ---
+    addFooter();
+
+    doc.save("StickerKing-Quote.pdf");
   }
 
   // --- Debounce Utility ---
