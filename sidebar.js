@@ -151,7 +151,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       doc.setFontSize(8);
       doc.setTextColor(150);
       doc.text("Thank you for your business!", 105, pageHeight - 15, { align: 'center' });
-      doc.text("Sticker King | www.stickerking.co.za | sales@stickerking.co.za", 105, pageHeight - 10, { align: 'center' });
+      doc.text("Sticker King | https://www.stickerking.co.za/ | info@stickerking.co.za", 105, pageHeight - 10, { align: 'center' });
     };
 
     // --- Load Logo ---
@@ -167,8 +167,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     doc.setFontSize(10);
     doc.setFont('helvetica', 'normal');
     doc.text("Sticker King Pty (Ltd)", 196, 28, { align: 'right' });
-    doc.text("123 Vinyl Lane, Print City", 196, 32, { align: 'right' });
-    doc.text("sales@stickerking.co.za", 196, 36, { align: 'right' });
+    doc.text("2D Anansi Park, 25 Church St, Durbanville", 196, 32, { align: 'right' });
+    doc.text("Cape Town, 7550", 196, 36, { align: 'right' });
+    doc.text("info@stickerking.co.za | design@stickerking.co.za", 196, 40, { align: 'right' });
 
     // --- Quote Details ---
     let y = 55;
