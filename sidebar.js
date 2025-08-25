@@ -74,12 +74,19 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Re-attach copy listener
     const newCopyQuoteBtn = document.getElementById('copy-quote');
-    if(newCopyQuoteBtn) {
-        newCopyQuoteBtn.addEventListener('click', () => {
-            navigator.clipboard.writeText(quoteText).then(() => {
-                showToast('Quote copied to clipboard!');
-            });
+    if (newCopyQuoteBtn) {
+      newCopyQuoteBtn.addEventListener('click', () => {
+        navigator.clipboard.writeText(quoteText).then(() => {
+          showToast('Quote copied to clipboard!');
         });
+      });
+    }
+
+    const newSavePdfBtn = document.getElementById('save-pdf');
+    if (newSavePdfBtn) {
+      newSavePdfBtn.addEventListener('click', () => {
+        generatePdf(quoteData);
+      });
     }
   }
 
@@ -120,6 +127,44 @@ document.addEventListener('DOMContentLoaded', async () => {
       minOrderAmount: MIN_ORDER_AMOUNT,
       roundedCorners: appState.roundedCorners
     };
+  }
+
+  // --- PDF Generation ---
+  function generatePdf(quoteData) {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+
+    doc.text("Sticker King Quote", 10, 10);
+    doc.text(`Material: ${quoteData.material}`, 10, 20);
+
+    let y = 30;
+    quoteData.stickerQuotes.forEach(stickerQuote => {
+      const lines = doc.splitTextToSize(stickerQuote.text, 180);
+      doc.text(lines, 10, y);
+      y += lines.length * 10;
+    });
+
+    if (quoteData.totalCostExclVat > 0) {
+      doc.text(`Total: R${quoteData.totalCostExclVat.toFixed(2)} Exclusive of VAT`, 10, y);
+      y += 10;
+
+      if (quoteData.includeVat) {
+        doc.text(`Total Incl VAT: R${quoteData.totalCostInclVat.toFixed(2)} the complete order total`, 10, y);
+        y += 10;
+      }
+
+      if (quoteData.totalCostExclVat < quoteData.minOrderAmount) {
+        doc.text('YOUR ORDER IS UNDER R100.00 EXCL VAT. WE HAVE A MINIMUM ORDER AMOUNT OF R100.00 EXCL VAT', 10, y);
+        y += 10;
+      }
+
+      if (quoteData.roundedCorners) {
+        doc.text("Cutline with rounded Corners", 10, y);
+        y += 10;
+      }
+    }
+
+    doc.save("quote.pdf");
   }
 
   // --- Debounce Utility ---
